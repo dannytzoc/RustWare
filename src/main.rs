@@ -235,7 +235,7 @@ impl Snake {
             body,
             ate: None,
             next_dir: None,
-            score:0,
+	    score:0,
         }
     }
 
@@ -257,7 +257,7 @@ impl Snake {
         false
     }
     pub  fn return_score(&self)->u32{
-                return self.score;
+		return self.score;	
       }
 
     /// The main update function for our snake which gets called every time
@@ -287,7 +287,7 @@ impl Snake {
             self.ate = Some(Ate::Itself);
         } else if self.eats(food) {
             self.ate = Some(Ate::Food);
-            self.score+=1;
+	    self.score+=1;
         } else {
             self.ate = None;
         }
@@ -365,8 +365,8 @@ impl GameState {
             food: Food::new(food_pos),
             gameover: false,
             rng,
-            score:0,
-             window_title: String::from("GET A SCORE OF 1000000 to Win! Score"),
+	    score:0,
+	     window_title: String::from("GET A SCORE OF 1000000 to Win! Score"),
         }
     }
 }
@@ -396,15 +396,15 @@ impl event::EventHandler<ggez::GameError> for GameState {
                             let new_food_pos =
                                 GridPosition::random(&mut self.rng, GRID_SIZE.0, GRID_SIZE.1);
                             self.food.pos = new_food_pos;
-                            self.score+=1;
-
+			    self.score+=1;
+		            
                         }
                         // If it ate itself, we set our gameover state to true.
                         Ate::Itself => {
                             self.gameover = true;
-                             quit(ctx);
-                             popup::execute_additional_code(format!("{} {}",self.window_title.clone(),self.score));
-                             popup::next_step(self.score);
+		             quit(ctx);
+			     popup::execute_additional_code(format!("{} {}",self.window_title.clone(),self.score));
+			     popup::next_step(self.score);    
                         }
                     }
                 }
@@ -456,9 +456,9 @@ impl event::EventHandler<ggez::GameError> for GameState {
 }
 
 fn main() -> GameResult {
-let mut state = GameState::new();
+let mut state = GameState::new();    
     // Set the initial window title.
-
+    
     // Here we use a ContextBuilder to setup metadata about our game. First the title and author
     let (ctx, events_loop) = ggez::ContextBuilder::new("snake", "Gray Olson")
         // Next we set up the window. This title will be displayed in the title bar of the window.
@@ -472,5 +472,5 @@ let mut state = GameState::new();
     // Next we create a new instance of our GameState struct, which implements EventHandler
     // And finally we actually run our game, passing in our context and state.
     event::run(ctx, events_loop, state);
-
+    
 }
